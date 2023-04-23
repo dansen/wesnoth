@@ -51,7 +51,8 @@ function wesnoth.game_events.add(opts) end
 ---Add a repeating game event handler bound directly to a Lua function
 ---@param name string|string[] The event or events to handle
 ---@param action fun(WML) The function called when the event triggers
-function wesnoth.game_events.add_repeating(name, action) end
+---@param undo_action? fun(WML) The function called if undoing after the event triggers.
+function wesnoth.game_events.add_repeating(name, action, undo_action) end
 
 ---Add a game event handler triggered from a menu item, bound directly to a Lua function
 ---@param id string
@@ -81,3 +82,11 @@ function wesnoth.game_events.fire_by_id(id, first, second, data) end
 ---Remove an event handler by ID
 ---@param id string The event to remove
 function wesnoth.game_events.remove(id) end
+
+---Set whether the current event is undoable.
+---@param can_undo boolean Whether the event is undoable.
+function wesnoth.game_events.set_undoable(can_undo) end
+
+---Add undo actions for the current event
+---@param actions WML|fun(ctx):boolean The undo actions, either as ActionWML or a Lua function.
+function wesnoth.game_events.add_undo_actions(actions) end

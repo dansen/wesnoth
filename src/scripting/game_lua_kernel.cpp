@@ -3904,6 +3904,23 @@ static std::string read_event_name(lua_State* L, int idx)
 	}
 }
 
+/**
+ * Add undo actions for the current active event
+ * Arg 1: Either a table of ActionWML or a function to call
+ * Arg 2: (optional) If Arg 1 is a function, this is a WML table that will be passed to it
+ */
+int game_lua_kernel::intf_add_undo_actions(lua_State *L)
+{
+	config cfg;
+	if(luaW_toconfig(L, 1, cfg)) {
+		synced_context::add_undo_commands(cfg, get_event_info());
+	} else {
+		luaW_toconfig(L, 2, cfg);
+		synced_context::add_undo_commands(save_wml_event(1), cfg, get_event_info());
+	}
+	return 0;
+}
+
 /** Add a new event handler
  * Arg 1: Table of options.
  * name: Event to handle, as a string or list of strings
@@ -3987,9 +4004,24 @@ int game_lua_kernel::intf_add_event(lua_State *L)
 	return 0;
 }
 
+/**
+ * Upvalue 1: The event function
+ * Upvalue 2: The undo function
+ * Arg 1: The event content
+ */
+int game_lua_kernel::cfun_undoable_event(lua_State* L)
+{
+	lua_pushvalue(L, lua_upvalueindex(1));
+	lua_push(L, 1);
+	luaW_pcall(L, 1, 0);
+	synced_context::add_undo_commands(lua_upvalueindex(2), get_event_info());
+	return 0;
+}
+
 /** Add a new event handler
  * Arg 1: Event to handle, as a string or list of strings; or menu item ID if this is a menu item
  * Arg 2: The function to call when the event triggers
+ * Arg 3: (optional, non-menu-items only) The function to call when the event is undone
  */
 template<bool is_menu_item>
 int game_lua_kernel::intf_add_event_simple(lua_State *L)
@@ -4003,6 +4035,9 @@ int game_lua_kernel::intf_add_event_simple(lua_State *L)
 	if(is_menu_item) {
 		id = name;
 		name = "menu item " + name;
+	} else if(lua_isfunction(L, 3)) {
+		// If undo is provided as a separate function, link them together into a single function
+		lua_pushcclosure(L, &dispatch<&game_lua_kernel::cfun_undoable_event>, 2);
 	}
 	auto new_handler = man.add_event_handler_from_lua(name, id, repeat, is_menu_item);
 	if(new_handler.valid()) {
@@ -4820,7 +4855,6 @@ game_lua_kernel::game_lua_kernel(game_state & gs, play_controller & pc, reports 
 		{ "get_era",                  &intf_get_era                  },
 		{ "get_resource",             &intf_get_resource             },
 		{ "modify_ai",                &intf_modify_ai_old            },
-		{ "allow_undo",                &dispatch<&game_lua_kernel::intf_allow_undo                 >        },
 		{ "cancel_action",             &dispatch<&game_lua_kernel::intf_cancel_action              >        },
 		{ "log_replay",                &dispatch<&game_lua_kernel::intf_log_replay                 >        },
 		{ "log",                       &dispatch<&game_lua_kernel::intf_log                        >        },
@@ -5186,6 +5220,8 @@ game_lua_kernel::game_lua_kernel(game_state & gs, play_controller & pc, reports 
 		{ "remove", &dispatch<&game_lua_kernel::intf_remove_event> },
 		{ "fire", &dispatch2<&game_lua_kernel::intf_fire_event, false> },
 		{ "fire_by_id", &dispatch2<&game_lua_kernel::intf_fire_event, true> },
+		{ "add_undo_actions", &dispatch<&game_lua_kernel::intf_add_undo_actions> },
+		{ "set_undoable", &dispatch<&game_lua_kernel::intf_allow_undo >        },
 		{ nullptr, nullptr }
 	};
 	lua_getglobal(L, "wesnoth");
