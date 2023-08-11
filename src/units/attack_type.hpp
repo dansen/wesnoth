@@ -61,10 +61,15 @@ public:
 	void set_type(const std::string& value) { type_ = value; set_changed(true); }
 	void set_icon(const std::string& value) { icon_ = value; set_changed(true); }
 	void set_range(const std::string& value) { range_ = value; set_changed(true); }
+    // 命中率
 	void set_accuracy(int value) { accuracy_ = value; set_changed(true); }
+    // 格挡值
 	void set_parry(int value) { parry_ = value; set_changed(true); }
+    // 伤害
 	void set_damage(int value) { damage_ = value; set_changed(true); }
+    // 攻击次数
 	void set_num_attacks(int value) { num_attacks_ = value; set_changed(true); }
+    
 	void set_attack_weight(double value) { attack_weight_ = value; set_changed(true); }
 	void set_defense_weight(double value) { defense_weight_ = value; set_changed(true); }
 	void set_specials(config value) { specials_ = value; set_changed(true); }

@@ -144,6 +144,7 @@ battle_context_unit_stats::battle_context_unit_stats(nonempty_unit_const_ptr up,
 	}
 
 	slows = weapon->has_special_or_ability("slow") && !opp.get_state("unslowable") ;
+    // 吸血技能
 	drains = !opp.get_state("undrainable") && weapon->has_special_or_ability("drains");
 	petrifies = !opp.get_state("unpetrifiable") && weapon->has_special_or_ability("petrifies");
 	poisons = !opp.get_state("unpoisonable") && weapon->has_special_or_ability("poison") && !opp.get_state(unit::STATE_POISONED);
@@ -213,6 +214,9 @@ battle_context_unit_stats::battle_context_unit_stats(nonempty_unit_const_ptr up,
 	if(is_slowed) {
 		damage = slow_damage;
 	}
+
+    // 90% - 110% 之间的随机数
+    damage = randomness::generator->get_random_int(damage * 0.9, damage * 1.1);
 
 	// Compute drain amounts only if draining is possible.
 	if(drains) {
