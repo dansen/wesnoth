@@ -183,6 +183,8 @@ battle_context_unit_stats::battle_context_unit_stats(nonempty_unit_const_ptr up,
 		cth = 0;
 	}
 
+    cth = int(float(cth) * 2.0);
+
 	chance_to_hit = std::clamp(cth, 0, 100);
 
 	// Compute base damage done with the weapon.
